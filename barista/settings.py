@@ -11,21 +11,29 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+from os import getenv
+from dotenv import load_dotenv
+
+from .utils import parse_bool, parse_list
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Environment setup
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "4x1q=_y*okynn25t9p3lsjb#p5*l!-%yhr&u9#iilntk_3^v1l"
+SECRET_KEY = getenv("BARISTA_SECRET")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = parse_bool(getenv("BARISTA_DEBUG", default="false"))
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = parse_list(getenv("BARISTA_HOSTS")) or []
+USE_X_FORWARDED_HOST = parse_bool(getenv("BARISTA_USE_FORWARDED_HOST", default="true"))
 
 
 # Application definition
@@ -71,6 +79,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "barista.wsgi.application"
 
+GRAPHENE = {"SCHEMA": "barista.schema.schema"}
+
+SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_SECURE = False if DEBUG else True
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
@@ -78,10 +90,11 @@ WSGI_APPLICATION = "barista.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "barista",
-        "USER": "postgres",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": getenv("BARISTA_DB_NAME", default="barista"),
+        "USER": getenv("BARISTA_DB_USER", default="postgres"),
+        "PASSWORD": getenv("BARISTA_DB_PASSWORD"),
+        "HOST": getenv("BARISTA_DB_HOST", default="localhost"),
+        "PORT": getenv("BARISTA_DB_PORT", default="5432"),
     }
 }
 
@@ -104,6 +117,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = "barista.User"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -122,5 +137,3 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 STATIC_URL = "/static/"
-
-GRAPHENE = {"SCHEMA": "barista.schema.schema"}
