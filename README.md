@@ -2,6 +2,8 @@
 
 _The backend API server for [uwcoffeencode.com](https://uwcoffeencode.com)_
 
+[![Build Status][drone-img]][drone]
+
 ## Development
 
 ### Setup
@@ -43,3 +45,6 @@ python manage.py runserver
 # Run the shell (administration):
 python manage.py shell
 ```
+
+[drone]: https://ci.stevenxie.me/UWCoffeeNCode/barista
+[drone-img]: https://ci.stevenxie.me/api/badges/UWCoffeeNCode/barista/status.svg
