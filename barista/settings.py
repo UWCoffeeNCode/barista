@@ -95,6 +95,9 @@ DATABASES = {
         "PASSWORD": getenv("BARISTA_DB_PASSWORD"),
         "HOST": getenv("BARISTA_DB_HOST", default="localhost"),
         "PORT": getenv("BARISTA_DB_PORT", default="5432"),
+        "OPTIONS": {
+            "sslmode": getenv("BARISTA_DB_SSLMODE", default="prefer"),
+        },
     }
 }
 
@@ -137,3 +140,4 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "static"

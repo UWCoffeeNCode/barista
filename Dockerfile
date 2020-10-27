@@ -25,7 +25,8 @@ RUN apk add --no-cache postgresql-libs && \
     apk --purge del .build-deps
 
 # Copy source code.
-COPY barista/ manage.py ./
+COPY barista/ ./barista/
+COPY manage.py ./
 
 # Open ports.
 EXPOSE 8000
