@@ -54,7 +54,7 @@ class Member(DjangoObjectType):
 
     @staticmethod
     def resolve_name(parent: MemberModel, info: ResolveInfo):
-        return f"{parent.first_name} {parent.last_name}"
+        return parent.name(redact=not is_authenticated(info, staff_only=True))
 
     @staticmethod
     def resolve_last_name(parent: MemberModel, info: ResolveInfo):
@@ -64,7 +64,7 @@ class Member(DjangoObjectType):
 
     @staticmethod
     def resolve_last_initial(parent: MemberModel, info: ResolveInfo):
-        return parent.last_name[0]
+        return parent.last_initial
 
     @staticmethod
     def resolve_email(parent: MemberModel, info: ResolveInfo):

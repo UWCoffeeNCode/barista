@@ -12,6 +12,14 @@ class Member(Model):
     last_name = CharField(max_length=150, validators=[MinLengthValidator(2)])
     email = EmailField("email address", unique=True, max_length=254)
 
+    def name(self, redact: bool = False) -> str:
+        last_name = self.last_name if not redact else f"{self.last_initial}."
+        return f"{self.first_name} {last_name}"
+
+    @property
+    def last_initial(self) -> str:
+        return self.last_name[0]
+
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
