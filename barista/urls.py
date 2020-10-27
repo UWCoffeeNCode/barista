@@ -22,5 +22,6 @@ from . import views
 urlpatterns = [
     path("", views.index),
     path("graphql", views.graphql, name="graphql"),
+    path("healthz", views.healthz, name="healthz"),
     path("admin/", admin.site.urls, name="admin"),
 ]
