@@ -20,8 +20,12 @@ from .models import User as UserModel, Member as MemberModel
 from .schema_node import Node, NodeField
 
 
+def authenticated_user(info: ResolveInfo) -> UserModel:
+    return info.context.user
+
+
 def is_authenticated(info: ResolveInfo, staff_only=False) -> bool:
-    user: UserModel = info.context.user
+    user = authenticated_user(info)
     if not user.is_authenticated:
         return False
     if staff_only:
@@ -105,8 +109,14 @@ class Logout(ClientIDMutation):
 
 class Query(ObjectType):
     node = NodeField(description="Get a node by its ID.")
-    member = NodeField(Member, description="Fetch a member by their ID.")
+    viewer = Field(User, description="Get the currently authenticated user.")
+    member = NodeField(Member, description="Get a member by their ID.")
     members = ConnectionField(Member, description="Look up members.")
+
+    @staticmethod
+    def resolve_viewer(parent: MemberModel, info: ResolveInfo):
+        user = authenticated_user(info)
+        return user if user.is_authenticated else None
 
 
 class Mutation(ObjectType):
