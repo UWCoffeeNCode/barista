@@ -1,8 +1,7 @@
 FROM python:3.8-alpine AS builder
 
 # Install build dependencies.
-ENV PATH="/root/.local/bin:$PATH"
-RUN pip install --user pipenv
+RUN pip install pipenv
 
 # Copy source code.
 WORKDIR /src
@@ -12,7 +11,7 @@ COPY Pipfile Pipfile.lock ./
 RUN pipenv lock -r > requirements.txt
 
 
-FROM python:3.8-alpine
+FROM tiangolo/uvicorn-gunicorn:python3.8-alpine3.10
 
 # Copy requirements.txt
 WORKDIR /app
@@ -24,13 +23,15 @@ RUN apk add --no-cache postgresql-libs && \
     pip install -r requirements.txt --no-cache-dir && \
     apk --purge del .build-deps
 
-# Copy source code.
+# Copy app code.
 COPY barista/ ./barista/
 COPY manage.py ./
 
-# Open ports.
-EXPOSE 8000
+# Configure Gunicorn.
+ENV MODULE_NAME=barista.asgi VARIABLE_NAME=application
 
-# Define entrypoint.
-ENTRYPOINT [ "python", "manage.py" ]
-CMD [ "runserver" ]
+# Collect static files.
+RUN BARISTA_SECRET=dummy python manage.py collectstatic
+
+# Open ports.
+EXPOSE 80
