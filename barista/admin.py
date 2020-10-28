@@ -17,3 +17,47 @@ site.index_title = ugettext_lazy("UWCNC Admin Console")
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
     readonly_fields = DEFAULT_READONLY_FIELDS
+
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "is_verified",
+        "is_staff",
+    )
+    list_filter = ("is_verified", "is_active", "is_superuser", "is_staff", "groups")
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("username", "password"),
+            },
+        ),
+        (
+            "Personal info",
+            {
+                "fields": ("first_name", "last_name", "email"),
+            },
+        ),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_verified",
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (
+            "Important dates",
+            {
+                "fields": ("last_login", "date_joined"),
+            },
+        ),
+    )

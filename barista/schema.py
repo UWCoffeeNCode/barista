@@ -1,4 +1,5 @@
 from __future__ import annotations
+from secrets import token_hex
 from typing import Dict
 
 from django.http import HttpRequest
@@ -125,14 +126,18 @@ class Signup(ClientIDMutation):
 
     @staticmethod
     def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
-        email = input.get("email")
+        # Generate a random, temporary username.
+        temp = token_hex(12)
+
+        # Create a new user and persist to DB.
         user = UserModel.objects.create_user(
-            username=email,
-            email=email,
+            username=temp,
+            email=input.get("email"),
             first_name=input.get("first_name"),
             last_name=input.get("last_name"),
         )
         user.save()
+
         return Signup(user=user)
 
 
@@ -160,7 +165,7 @@ class Query(ObjectType):
             ),
         },
     )
-    members = ConnectionField(
+    users = ConnectionField(
         User,
         description="Look up users.",
     )

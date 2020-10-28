@@ -22,6 +22,7 @@ class User(BaseUser):
 
     email = EmailField("email address", unique=True, max_length=254)
     is_verified = BooleanField(
+        "verified",
         default=False,
         help_text=(
             "Designates that this user has verified their email address and set "
