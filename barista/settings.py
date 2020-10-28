@@ -82,6 +82,7 @@ WSGI_APPLICATION = "barista.wsgi.application"
 
 GRAPHENE = {"SCHEMA": "barista.schema.schema"}
 
+SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SECURE = False if DEBUG else True
 
