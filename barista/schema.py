@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 
 from graphene import (
     Schema,
+    GlobalID,
     ObjectType,
     Field,
     ResolveInfo,
@@ -16,7 +17,7 @@ from graphene.relay import ClientIDMutation
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField as ConnectionField
 
-from .models import User as UserModel, Member as MemberModel
+from .models import User as UserModel
 from .schema_node import Node, NodeField
 
 
@@ -38,41 +39,47 @@ class User(DjangoObjectType):
 
     class Meta:
         model = UserModel
-        fields = ("id",)
+        exclude = (
+            "password",
+            "is_active",
+            "is_superuser",
+            "date_joined",
+            "last_login",
+        )
         interfaces = (Node,)
         filter_fields = ()
 
-
-class Member(DjangoObjectType):
-    "A member of the UW Coffee N' Code community."
-
-    class Meta:
-        model = MemberModel
-        excludes = ("name", "last_name", "email")
-        interfaces = (Node,)
-        filter_fields = ()
-
-    name = String(required=True)
-    last_name = String()
-    last_initial = String(required=True)
+    username = String(
+        description="A unique username that acts as a handle for the user.",
+    )
     email = String()
 
-    @staticmethod
-    def resolve_name(parent: MemberModel, info: ResolveInfo):
-        return parent.name(redact=not is_authenticated(info, staff_only=True))
+    name = String()
+    last_name = String()
+    last_initial = String()
 
     @staticmethod
-    def resolve_last_name(parent: MemberModel, info: ResolveInfo):
+    def resolve_name(user: UserModel, info: ResolveInfo):
+        return user.get_name(redact=not is_authenticated(info, staff_only=True))
+
+    @staticmethod
+    def resolve_last_name(user: UserModel, info: ResolveInfo):
         if not is_authenticated(info):
             return None
-        return parent.last_name
+        return user.last_name
 
     @staticmethod
-    def resolve_last_initial(parent: MemberModel, info: ResolveInfo):
-        return parent.last_initial
+    def resolve_last_initial(user: UserModel, info: ResolveInfo):
+        return user.last_initial
 
     @staticmethod
-    def resolve_email(parent: MemberModel, info: ResolveInfo):
+    def resolve_username(user: UserModel, info: ResolveInfo):
+        if not user.is_verified:
+            return None
+        return user.username
+
+    @staticmethod
+    def resolve_email(parent: UserModel, info: ResolveInfo):
         if not is_authenticated(info, staff_only=True):
             return None
         return parent.email
@@ -86,7 +93,7 @@ class Login(ClientIDMutation):
     user = Field(User, required=True)
 
     @staticmethod
-    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
         request: HttpRequest = info.context
         user = authenticate(
             request,
@@ -102,28 +109,60 @@ class Login(ClientIDMutation):
 
 class Logout(ClientIDMutation):
     @staticmethod
-    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
         request: HttpRequest = info.context
         logout(request)
         return Logout()
+
+
+class Signup(ClientIDMutation):
+    class Input:
+        email = String(required=True)
+        first_name = String(required=True)
+        last_name = String(required=True)
+
+    user = Field(User, required=True)
+
+    @staticmethod
+    def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
+        email = input.get("email")
+        user = UserModel.objects.create_user(
+            username=email,
+            email=email,
+            first_name=input.get("first_name"),
+            last_name=input.get("last_name"),
+        )
+        user.save()
+        return Signup(user=user)
 
 
 class Query(ObjectType):
     node = NodeField(description="Get a node by its ID.")
     viewer = Field(User, description="Get the currently authenticated user.")
 
-    member = NodeField(
-        Member,
-        description="Get a member by their ID.",
+    user = Field(
+        User,
+        description="Get a user by their ID.",
+        args={
+            "id": String(
+                required=True,
+                description="The ID of the user.",
+            ),
+        },
     )
-    member_by_email = Field(
-        Member,
-        description="Get a member by their email address.",
-        args={"email": String(required=True)},
+    user_by_email = Field(
+        User,
+        description="Get a user by their email address.",
+        args={
+            "email": String(
+                required=True,
+                description="The email address of the user.",
+            ),
+        },
     )
     members = ConnectionField(
-        Member,
-        description="Look up members.",
+        User,
+        description="Look up users.",
     )
 
     @staticmethod
@@ -132,13 +171,28 @@ class Query(ObjectType):
         return user if user.is_authenticated else None
 
     @staticmethod
-    def resolve_member_by_email(root: Query, info: ResolveInfo, email: str):
-        return MemberModel.objects.get(email=email)
+    def resolve_user(root: Query, info: ResolveInfo, id: GlobalID):
+        user: UserModel = Node.get_node_from_global_id(info, id, only_type=User)
+        if not user:
+            return None
+        if not user.is_active:
+            return None
+        return user
+
+    @staticmethod
+    def resolve_user_by_email(root: Query, info: ResolveInfo, email: str):
+        user: UserModel = UserModel.objects.get(email=email)
+        if not user:
+            return None
+        if not user.is_active:
+            return None
+        return user
 
 
 class Mutation(ObjectType):
     login = Login.Field(description="Begin an authenticated session.")
     logout = Logout.Field(description="Clear current authenticated session.")
+    signup = Signup.Field(description="Create a new user.")
 
 
 schema = Schema(query=Query, mutation=Mutation)
