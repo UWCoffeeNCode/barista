@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser as BaseUser
 from django.db.models import (
+    Model as DjangoModel,
     UUIDField,
     DateTimeField,
     CharField,
@@ -8,6 +9,15 @@ from django.db.models import (
 )
 from django.core.validators import MinLengthValidator
 from uuid import uuid4
+
+
+class Model(DjangoModel):
+    id = UUIDField("ID", primary_key=True, editable=False, default=uuid4)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
 
 
 class User(BaseUser):
