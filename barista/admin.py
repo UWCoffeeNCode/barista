@@ -9,9 +9,9 @@ DEFAULT_READONLY_FIELDS = ("created_at", "updated_at")
 
 
 # Customize Admin site
-site.site_title = ugettext_lazy("UWCNC Admin")
-site.site_header = ugettext_lazy("UWCNC Administration")
-site.index_title = ugettext_lazy("Backend administration console")
+site.site_title = ugettext_lazy("Barista")
+site.site_header = ugettext_lazy("Barista")
+site.index_title = ugettext_lazy("UWCNC Admin Console")
 
 
 @admin.register(User)
