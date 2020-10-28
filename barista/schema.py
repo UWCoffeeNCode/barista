@@ -48,6 +48,7 @@ class Member(DjangoObjectType):
 
     class Meta:
         model = MemberModel
+        excludes = ("name", "last_name", "email")
         interfaces = (Node,)
         filter_fields = ()
 
@@ -110,13 +111,29 @@ class Logout(ClientIDMutation):
 class Query(ObjectType):
     node = NodeField(description="Get a node by its ID.")
     viewer = Field(User, description="Get the currently authenticated user.")
-    member = NodeField(Member, description="Get a member by their ID.")
-    members = ConnectionField(Member, description="Look up members.")
+
+    member = NodeField(
+        Member,
+        description="Get a member by their ID.",
+    )
+    member_by_email = Field(
+        Member,
+        description="Get a member by their email address.",
+        args={"email": String(required=True)},
+    )
+    members = ConnectionField(
+        Member,
+        description="Look up members.",
+    )
 
     @staticmethod
-    def resolve_viewer(parent: MemberModel, info: ResolveInfo):
+    def resolve_viewer(root: Query, info: ResolveInfo):
         user = authenticated_user(info)
         return user if user.is_authenticated else None
+
+    @staticmethod
+    def resolve_member_by_email(root: Query, info: ResolveInfo, email: str):
+        return MemberModel.objects.get(email=email)
 
 
 class Mutation(ObjectType):
