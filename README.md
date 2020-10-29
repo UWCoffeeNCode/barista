@@ -43,7 +43,8 @@ access.
 
 ### Setup
 
-> Make sure you have [`pipenv`](https://pypi.org/project/pipenv/),
+> Make sure you have [`pyenv`](https://github.com/pyenv/pyenv),
+> [`pipenv`](https://pypi.org/project/pipenv/),
 > [Docker](https://docs.docker.com/get-docker/), and
 > [Docker Compose](https://docs.docker.com/compose/) installed.
 

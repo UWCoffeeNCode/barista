@@ -80,11 +80,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "barista.wsgi.application"
 
-GRAPHENE = {"SCHEMA": "barista.schema.schema"}
+GRAPHENE = {
+    "SCHEMA": "barista.schema.schema",
+}
+
+SLACK_CHANNEL = getenv("BARISTA_SLACK_CHANNEL", "general")
+SLACK_TOKEN = getenv("BARISTA_SLACK_TOKEN")
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SECURE = False if DEBUG else True
+
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases

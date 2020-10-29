@@ -3,6 +3,7 @@ from secrets import token_hex
 from typing import Dict
 
 from django.http import HttpRequest
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 
 from graphene import (
@@ -12,12 +13,14 @@ from graphene import (
     Field,
     ResolveInfo,
     String,
+    Boolean,
     ID,
 )
 from graphene.relay import ClientIDMutation
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField as ConnectionField
 
+from .slack import post_message as slack
 from .models import User as UserModel
 from .schema_node import Node, NodeField
 
@@ -121,6 +124,7 @@ class Signup(ClientIDMutation):
         email = String(required=True)
         first_name = String(required=True)
         last_name = String(required=True)
+        subscribe = Boolean()
 
     user = Field(User, required=True)
 
@@ -135,8 +139,22 @@ class Signup(ClientIDMutation):
             email=input.get("email"),
             first_name=input.get("first_name"),
             last_name=input.get("last_name"),
+            is_subscribed=input.get("subscribe", False),
         )
         user.save()
+
+        # Notify Slack.
+        message = (
+            f"*{user.first_name} {user.last_name}* ({user.email}) has joined "
+            "UW Coffee 'N Code!  :tada:"
+        )
+        if user.is_subscribed:
+            message += (
+                "\n"
+                f"@here We should add {user.email} to the newsletter mailing "
+                "list.  :email:"
+            )
+        slack(channel=settings.SLACK_CHANNEL, text=message)
 
         return Signup(user=user)
 

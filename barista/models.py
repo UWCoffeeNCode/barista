@@ -39,6 +39,11 @@ class User(BaseUser):
             "a password."
         ),
     )
+    is_subscribed = BooleanField(
+        "subscribed",
+        default=False,
+        help_text="Designates that this user is subscribed to email newsletters.",
+    )
 
     first_name = CharField(
         "first name",

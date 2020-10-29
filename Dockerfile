@@ -1,3 +1,4 @@
+# == BUILDER ==
 FROM python:3.8-alpine AS builder
 
 # Install build dependencies.
@@ -11,6 +12,7 @@ COPY Pipfile Pipfile.lock ./
 RUN pipenv lock -r > requirements.txt
 
 
+# == RUNNER ==
 FROM tiangolo/uvicorn-gunicorn:python3.8-alpine3.10
 
 # Copy requirements.txt
