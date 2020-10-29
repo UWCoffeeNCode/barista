@@ -63,7 +63,7 @@ class User(DjangoObjectType):
 
     @staticmethod
     def resolve_name(user: UserModel, info: ResolveInfo):
-        return user.get_name(redact=not is_authenticated(info, staff_only=True))
+        return user.name(redact=not is_authenticated(info, staff_only=True))
 
     @staticmethod
     def resolve_last_name(user: UserModel, info: ResolveInfo):

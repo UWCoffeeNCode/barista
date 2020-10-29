@@ -32,7 +32,7 @@ SECRET_KEY = getenv("BARISTA_SECRET")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = parse_bool(getenv("BARISTA_DEBUG", default="false"))
 
-ALLOWED_HOSTS = parse_list(getenv("BARISTA_HOSTS")) or []
+ALLOWED_HOSTS = ["*"] if DEBUG else parse_list(getenv("BARISTA_HOSTS")) or []
 USE_X_FORWARDED_HOST = parse_bool(getenv("BARISTA_USE_FORWARDED_HOST", default="true"))
 
 
@@ -84,8 +84,9 @@ GRAPHENE = {
     "SCHEMA": "barista.schema.schema",
 }
 
-SLACK_CHANNEL = getenv("BARISTA_SLACK_CHANNEL", "general")
 SLACK_TOKEN = getenv("BARISTA_SLACK_TOKEN")
+SLACK_SECRET = getenv("BARISTA_SLACK_SECRET")
+SLACK_CHANNEL = getenv("BARISTA_SLACK_CHANNEL", "general")
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
@@ -149,3 +150,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"
+
+
+# Enable logging.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": getenv("BARISTA_LOG_LEVEL", "INFO"),
+    },
+}

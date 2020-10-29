@@ -61,6 +61,6 @@ class User(BaseUser):
     def last_initial(self) -> str:
         return self.last_name[0]
 
-    def get_name(self, redact: bool = False) -> str:
+    def name(self, redact: bool = False) -> str:
         last_name = self.last_name if not redact else f"{self.last_initial}."
         return f"{self.first_name} {last_name}"
