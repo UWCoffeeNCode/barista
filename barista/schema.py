@@ -14,7 +14,6 @@ from graphene import (
     ResolveInfo,
     String,
     Boolean,
-    ID,
 )
 from graphene.relay import ClientIDMutation
 from graphene_django import DjangoObjectType
@@ -83,21 +82,21 @@ class User(DjangoObjectType):
         return user.username
 
     @staticmethod
-    def resolve_email(parent: UserModel, info: ResolveInfo):
+    def resolve_email(user: UserModel, info: ResolveInfo):
         if not is_authenticated(info, staff_only=True):
             return None
-        return parent.email
+        return user.email
 
 
 class Login(ClientIDMutation):
     class Input:
-        username = ID(required=True)
+        username = String(required=True)
         password = String(required=True)
 
     user = Field(User, required=True)
 
     @staticmethod
-    def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
         request: HttpRequest = info.context
         user = authenticate(
             request,
@@ -113,7 +112,7 @@ class Login(ClientIDMutation):
 
 class Logout(ClientIDMutation):
     @staticmethod
-    def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
         request: HttpRequest = info.context
         logout(request)
         return Logout()
@@ -129,7 +128,7 @@ class Signup(ClientIDMutation):
     user = Field(User, required=True)
 
     @staticmethod
-    def mutate_and_get_payload(root: Query, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
         # Generate a random, temporary username.
         temp = token_hex(12)
 
