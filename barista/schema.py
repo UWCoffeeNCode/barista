@@ -1,6 +1,7 @@
 from __future__ import annotations
 from secrets import token_hex
-from typing import Dict
+from typing import Dict, Union
+from requests import post
 
 from django.http import HttpRequest
 from django.conf import settings
@@ -96,12 +97,12 @@ class Login(ClientIDMutation):
     user = Field(User, required=True)
 
     @staticmethod
-    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root, info: ResolveInfo, username: str, password: str):
         request: HttpRequest = info.context
         user = authenticate(
             request,
-            username=input.get("username"),
-            password=input.get("password"),
+            username=username,
+            password=password,
         )
         if user is not None:
             login(request, user)
@@ -112,7 +113,7 @@ class Login(ClientIDMutation):
 
 class Logout(ClientIDMutation):
     @staticmethod
-    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(root, info: ResolveInfo):
         request: HttpRequest = info.context
         logout(request)
         return Logout()
@@ -120,6 +121,7 @@ class Logout(ClientIDMutation):
 
 class Signup(ClientIDMutation):
     class Input:
+        token = String(required=True)
         email = String(required=True)
         first_name = String(required=True)
         last_name = String(required=True)
@@ -128,30 +130,54 @@ class Signup(ClientIDMutation):
     user = Field(User, required=True)
 
     @staticmethod
-    def mutate_and_get_payload(root, info: ResolveInfo, **input: Dict):
+    def mutate_and_get_payload(
+        root,
+        info: ResolveInfo,
+        token: str,
+        email: str,
+        first_name: str,
+        last_name: str,
+        subscribe: Union[bool, None],
+    ):
+        # Ensure ReCaptcha secret is available.
+        secret = settings.RECAPTCHA_SECRET
+        if not secret:
+            raise Exception("Missing RECAPTCHA_SECRET.")
+
+        # Verify ReCaptcha.
+        captcha: Dict = post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data={
+                "secret": secret,
+                "response": token,
+            },
+        ).json()
+        if not captcha.get("success"):
+            return Exception("Failed captcha.")
+
         # Generate a random, temporary username.
         temp = token_hex(12)
 
         # Create a new user and persist to DB.
         user = UserModel.objects.create_user(
             username=temp,
-            email=input.get("email"),
-            first_name=input.get("first_name"),
-            last_name=input.get("last_name"),
-            is_subscribed=input.get("subscribe", False),
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            is_subscribed=subscribe or False,
         )
         user.save()
 
         # Notify Slack.
         message = (
-            f"*{user.first_name} {user.last_name}* ({user.email}) has joined "
-            "UW Coffee 'N Code!  :tada:"
+            f"*{first_name} {last_name}* ({email}) has joined UW Coffee 'N "
+            "Code!  :tada:"
         )
         if user.is_subscribed:
             message += (
                 "\n"
-                f"@here We should add {user.email} to the newsletter mailing "
-                "list.  :email:"
+                f"@here We should add {email} to the newsletter mailing list. "
+                " :email:"
             )
         slack(channel=settings.SLACK_CHANNEL, text=message)
 
